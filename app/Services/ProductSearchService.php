@@ -45,6 +45,7 @@ class ProductSearchService
 
         $formattedSearch = $this->formatFulltextTerm($searchTerm);
 
+
         $query->whereRaw(
             'MATCH(name, description) AGAINST(? IN BOOLEAN MODE)',
             [$formattedSearch]

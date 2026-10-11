@@ -213,9 +213,12 @@ test('can filter out-of-stock products when in_stock is false', function () {
 });
 
 test('validates page parameter boundaries', function () {
-    $response = $this->getJson('/api/products/search?page=0');
+    $this->getJson('/api/products/search?page=0')
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['page']);
 
-    $response->assertStatus(422)
+    $this->getJson('/api/products/search?page=-1')
+        ->assertStatus(422)
         ->assertJsonValidationErrors(['page']);
 });
 

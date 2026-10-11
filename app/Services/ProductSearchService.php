@@ -30,7 +30,7 @@ class ProductSearchService
         $this->applyPriceFilter($query, $filters['min_price'] ?? null, $filters['max_price'] ?? null);
         $this->applyCategoryFilter($query, $filters['category_id'] ?? null);
         $this->applyStockFilter($query, $filters['in_stock'] ?? null);
-        $this->applySorting($query, $filters['sort_by'] ?? 'created_at', $filters['sort_order'] ?? 'desc');
+        $this->applySorting($query, $filters);
 
         $perPage = min((int) ($filters['per_page'] ?? 15), 50);
 
@@ -83,12 +83,15 @@ class ProductSearchService
         }
     }
 
-    protected function applySorting(Builder $query, string $sortBy, string $sortOrder): void
+    protected function applySorting(Builder $query, array $filters): void
     {
-        $column = $this->allowedSortColumns[$sortBy] ?? 'created_at';
-        $direction = strtolower($sortOrder) === 'asc' ? 'asc' : 'desc';
+        $sortBy    = $filters['sort_by'] ?? 'created_at';
+        $sortOrder = strtolower($filters['sort_order'] ?? 'desc');
+
+        $column    = $this->allowedSortColumns[$sortBy] ?? 'created_at';
+        $direction = in_array($sortOrder, ['asc', 'desc'], true) ? $sortOrder : 'desc';
 
         $query->orderBy($column, $direction)
-                ->orderBy('id', 'desc');
+            ->orderBy('id', $direction);
     }
 }

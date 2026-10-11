@@ -169,3 +169,61 @@ test('returns all products when search term is empty', function () {
     $response->assertOk()
         ->assertJsonCount(3, 'data');
 });
+test('can search products matching keyword in description only', function () {
+    $category = Category::factory()->create();
+
+    $product = Product::factory()->create([
+        'category_id' => $category->id,
+        'name'        => 'Generic Device Model X',
+        'description' => 'Ultra high performance gaming processor inside',
+    ]);
+
+    $other = Product::factory()->create([
+        'category_id' => $category->id,
+        'name'        => 'Simple Desk',
+        'description' => 'Wooden office furniture',
+    ]);
+
+    $response = $this->getJson('/api/products/search?q=processor');
+
+    $response->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonFragment(['id' => $product->id])
+        ->assertJsonMissing(['id' => $other->id]);
+});
+
+test('can filter out-of-stock products when in_stock is false', function () {
+    $category = Category::factory()->create();
+
+    $inStockProduct = Product::factory()->create([
+        'category_id'    => $category->id,
+        'stock_quantity' => 10,
+    ]);
+
+    $outOfStockProduct = Product::factory()->create([
+        'category_id'    => $category->id,
+        'stock_quantity' => 0,
+    ]);
+
+    $response = $this->getJson('/api/products/search?in_stock=0');
+
+    $response->assertOk()
+        ->assertJsonFragment(['id' => $outOfStockProduct->id])
+        ->assertJsonMissing(['id' => $inStockProduct->id]);
+});
+
+test('validates page parameter boundaries', function () {
+    $response = $this->getJson('/api/products/search?page=0');
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors(['page']);
+});
+
+test('validates max character length for search query q', function () {
+    $longQuery = str_repeat('a', 101);
+
+    $response = $this->getJson('/api/products/search?q=' . $longQuery);
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors(['q']);
+});
